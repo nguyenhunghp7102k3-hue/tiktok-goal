@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TikTok Gift Menu Manual</title>
+<style>
+  :root{
+    --bg: rgba(10,10,18,.62);
+    --card: rgba(255,255,255,.13);
+    --text:#fff;
+    --muted:rgba(255,255,255,.78);
+    --line:rgba(255,255,255,.24);
+    --accent:#ff3b7f;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    width:100vw;
+    height:100vh;
+    overflow:hidden;
+    background:transparent;
+    font-family: Arial, Helvetica, sans-serif;
+    color:var(--text);
+  }
+  .wrap{
+    position:absolute;
+    left:50%;
+    bottom:42px;
+    transform:translateX(-50%);
+    width:min(94vw,1200px);
+  }
+  .menu{
+    display:grid;
+    grid-template-columns:repeat(8,1fr);
+    gap:10px;
+    padding:12px;
+    border-radius:22px;
+    background:var(--bg);
+    border:1px solid var(--line);
+    backdrop-filter: blur(10px);
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+  }
+  .item{
+    min-height:112px;
+    border-radius:18px;
+    background:var(--card);
+    border:1px solid rgba(255,255,255,.18);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:8px 5px;
+  }
+  .icon{
+    width:46px;
+    height:46px;
+    border-radius:50%;
+    background:rgba(255,255,255,.18);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:27px;
+    margin-bottom:6px;
+  }
+  .name{
+    font-weight:700;
+    font-size:15px;
+    line-height:1.1;
+    text-align:center;
+    white-space:nowrap;
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .count{
+    margin-top:5px;
+    font-size:26px;
+    font-weight:900;
+    color:#fff;
+    text-shadow:0 2px 8px rgba(0,0,0,.35);
+  }
+  .panel{
+    position:absolute;
+    right:20px;
+    top:20px;
+    width:330px;
+    max-height:88vh;
+    overflow:auto;
+    padding:14px;
+    border-radius:16px;
+    background:rgba(0,0,0,.78);
+    border:1px solid rgba(255,255,255,.2);
+    color:white;
+  }
+  .panel h3{margin:0 0 10px;font-size:16px}
+  .control{
+    display:grid;
+    grid-template-columns:34px 1fr 36px 36px;
+    gap:6px;
+    align-items:center;
+    margin:7px 0;
+  }
+  input{
+    width:100%;
+    border:1px solid rgba(255,255,255,.25);
+    border-radius:8px;
+    background:rgba(255,255,255,.12);
+    color:white;
+    padding:7px;
+  }
+  button{
+    border:0;
+    border-radius:8px;
+    padding:8px;
+    font-weight:800;
+    cursor:pointer;
+  }
+  .plus{background:#25f4ee;color:#111}
+  .minus{background:#ff3b7f;color:white}
+  .small{font-size:12px;color:var(--muted);line-height:1.35;margin-top:10px}
+  .reset{width:100%;margin-top:8px;background:#fff;color:#111}
+  .hidden{display:none}
+  @media(max-width:900px){
+    .menu{grid-template-columns:repeat(4,1fr)}
+    .item{min-height:98px}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="menu" id="menu"></div>
+  </div>
+
+  <div class="panel" id="panel">
+    <h3>Điều khiển mục tiêu quà</h3>
+    <div id="controls"></div>
+    <button class="reset" onclick="resetAll()">Reset tất cả về 0</button>
+    <div class="small">
+      Bấm + / - để tăng giảm số. Sửa tên trong ô nhập, hệ thống sẽ tự lưu.<br>
+      Phím <b>H</b>: ẩn/hiện bảng điều khiển. Phím <b>R</b>: reset số.
+    </div>
+  </div>
+
+<script>
+const defaultItems = [
+  {icon:'🌹', name:'Kpop', count:0},
+  {icon:'🎁', name:'Urban', count:0},
+  {icon:'💎', name:'Solo', count:0},
+  {icon:'❤️', name:'Couple', count:0},
+  {icon:'⭐', name:'Cool', count:0},
+  {icon:'🎵', name:'Sexy', count:0},
+  {icon:'🔥', name:'Power', count:0},
+  {icon:'✨', name:'Free Dance', count:0},
+];
+let items = JSON.parse(localStorage.getItem('giftMenu8') || 'null') || defaultItems;
+
+function save(){ localStorage.setItem('giftMenu8', JSON.stringify(items)); }
+function render(){
+  const menu = document.getElementById('menu');
+  const controls = document.getElementById('controls');
+  menu.innerHTML = '';
+  controls.innerHTML = '';
+  items.forEach((it,i)=>{
+    const card = document.createElement('div');
+    card.className='item';
+    card.innerHTML = `<div class="icon">${it.icon}</div><div class="name">${escapeHtml(it.name)}</div><div class="count">${it.count}</div>`;
+    menu.appendChild(card);
+
+    const row = document.createElement('div');
+    row.className='control';
+    row.innerHTML = `<div style="font-size:24px;text-align:center">${it.icon}</div>
+      <input value="${escapeAttr(it.name)}" onchange="changeName(${i}, this.value)" />
+      <button class="minus" onclick="add(${i},-1)">-</button>
+      <button class="plus" onclick="add(${i},1)">+</button>`;
+    controls.appendChild(row);
+  });
+}
+function add(i,n){ items[i].count=Math.max(0,(items[i].count||0)+n); save(); render(); }
+function changeName(i,v){ items[i].name=v.trim() || defaultItems[i].name; save(); render(); }
+function resetAll(){ items.forEach(x=>x.count=0); save(); render(); }
+function escapeHtml(s){ return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+function escapeAttr(s){ return escapeHtml(s); }
+document.addEventListener('keydown',e=>{
+  if(e.key.toLowerCase()==='h') document.getElementById('panel').classList.toggle('hidden');
+  if(e.key.toLowerCase()==='r') resetAll();
+});
+render();
+</script>
+</body>
+</html>
